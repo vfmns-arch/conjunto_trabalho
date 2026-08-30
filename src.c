@@ -8,6 +8,8 @@ int largura;
 int max;
 int num_threads;
 FILE *fptr;
+pthread_mutex_t mutex;
+int next_pixel = 0;
 typedef struct {
   int x;
   int y;
@@ -31,7 +33,6 @@ void *mandel(void *argumentos) {
     arg->intensidade = (double)iter * 255 / (double)max;
     return NULL;
 }
-
 void *mandelp(void *argumentos){
   int pixels = altura * largura;
   int *x = argumentos;
@@ -46,10 +47,25 @@ void *mandelp(void *argumentos){
   }
   return NULL;
 }
+void *mandelp2(void *argumentos) {
+    while (1) {
+        int pixel;
+        pthread_mutex_lock(&mutex);
+        if (next_pixel >= pixels) {
+            pthread_mutex_unlock(&mutex);
+            break;
+        }
+        pixel = next_pixel;
+        next_pixel++;
+        pthread_mutex_unlock(&mutex);
+        mandel(&ptr[pixel]);
+    }
+    return NULL;
+}
 int main(int argc, char **argv){
   FILE *time = fopen("time.txt", "w");
   if(time == NULL){
-    printf("erro");
+    printf("erro ao criar arquivo time");
     return 1;
   }
   double start, end;
@@ -73,7 +89,7 @@ int main(int argc, char **argv){
   }
   fptr = fopen("mandelbrot_vfmns_serial.txt", "w");
   if(fptr == NULL){
-    printf("erro");
+    printf("erro ao criar arquivo serial");
     return 1;
   }
   start = omp_get_wtime();
@@ -92,11 +108,11 @@ int main(int argc, char **argv){
     }
   }
   if(fclose(fptr) != 0){
-    printf("erro");
+    printf("erro ao fechar arquivo serial");
   }
   fptr = fopen("mandelbrot_vfmns_openmp.txt", "w");
   if(fptr == NULL){
-    printf("erro");
+    printf("erro ao abrir arquivo openmp");
     return 1;
   }
   start = omp_get_wtime();
@@ -112,11 +128,11 @@ int main(int argc, char **argv){
     }
   }
   if(fclose(fptr) != 0){
-    printf("erro");
+    printf("erro ao fechar arquivo openmp");
   }
   fptr = fopen("mandelbrot_vfmns_pthread1.txt", "w");
   if(fptr == NULL){
-    printf("erro");
+    printf("erro ao abrir arquivo pthread1");
     return 1;
   }
   start = omp_get_wtime();
@@ -125,13 +141,13 @@ int main(int argc, char **argv){
   for(int i = 0; i < num_threads; i++){
     p[i] = i;
     if(pthread_create(&threads[i], NULL, mandelp, &p[i]) != 0){
-      printf("erro");
+      printf("erro ao criar pthread 1");
       return 1;
     }
   }
   for(int i = 0; i < num_threads; i++){
     if(pthread_join(threads[i], NULL) != 0){
-      printf("erro");
+      printf("erro ao juntar threads 1");
       return 1;
     }
   }
@@ -143,10 +159,52 @@ int main(int argc, char **argv){
   }
   fprintf(time, "tempo de exec pthread1: %f segundos\n", end - start);
   if(fclose(fptr) != 0){
-    printf("erro");
+    printf("erro ao fechar arquivo pthread1");
   }
+  fptr = fopen("mandelbrot_vfmns_pthread2.txt", "w");
+  if (fptr == NULL) {
+    printf("erro ao criar arquivo pthread2");
+    return 1;
+  }
+  next_pixel = 0;
+  if (pthread_mutex_init(&mutex, NULL) != 0) {
+    printf("erro ao criar mutex");
+    fclose(fptr);
+    return 1;
+  }
+  start = omp_get_wtime();
+  pthread_t threads2[num_threads];
+  int p2[num_threads];
+  for (int i = 0; i < num_threads; i++) {
+    p2[i] = i;
+    if (pthread_create(&threads2[i], NULL, mandelp2, &p2[i]) != 0) {
+      printf("erro ao criar thread pthread2");
+      pthread_mutex_destroy(&mutex);
+      fclose(fptr);
+      return 1;
+    }
+  }
+  for (int i = 0; i < num_threads; i++) {
+    if (pthread_join(threads2[i], NULL) != 0) {
+      printf("erro ao esperar thread pthread2");
+      pthread_mutex_destroy(&mutex);
+      fclose(fptr);
+      return 1;
+    }
+  }
+  end = omp_get_wtime();
+  fprintf(time, "tempo de exec pthread2: %f segundos\n", end - start);
+  for (int i = 0; i < altura; i++) {
+    for (int j = 0; j < largura; j++) {
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+    }
+  }
+  if (fclose(fptr) != 0) {
+    printf("erro ao fechar arquivo pthread2");
+  }
+  pthread_mutex_destroy(&mutex);
   if(fclose(time) != 0){
-    printf("erro");
+    printf("erro ao fechar arquivo times");
     return 1;
   }
   return 0;
