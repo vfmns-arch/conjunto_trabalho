@@ -84,7 +84,7 @@ int main(int argc, char **argv){
   pixels = altura * largura;
   args *argumentos = malloc(pixels * sizeof(args));
   if(!argumentos){
-    fprintf("erro alocando memoria");
+    printf("erro alocando memoria");
     return 1;
   }
   ptr = argumentos;
