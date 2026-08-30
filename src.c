@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <omp.h>
-#include <time.h>
 
 int altura;
 int largura;
@@ -15,23 +14,24 @@ typedef struct {
   float intensidade;
 } args;
 args *ptr;
-void *mandel(void *argumentos){
-  args *arg = argumentos;
-  float cx = 3 * arg->x / (float)largura - 2;
-  float cy = 3 * arg->y / (float)altura - 1.5;
-  float zx = 0;
-  float zy = 0;
-  int iter = 0;
-  while(iter < max){
-    double new = zx * zx + cx;
-    zx = new;
-    new = zy * zy + cy;
-    zy = new;
-    iter++;
-  }
-  arg->intensidade = (float)iter * 255 / (float)max;
-  return NULL;
+void *mandel(void *argumentos) {
+    args *arg = argumentos;
+    double cx = 3 * arg->x / (double)largura - 2.0;
+    double cy = 3 * arg->y / (double)altura - 1.5;
+    double zx = 0;
+    double zy = 0;
+    int iter = 0;
+    while (iter < max && zx * zx + zy * zy <= 4) {
+        double new_zx = zx * zx - zy * zy + cx;
+        double new_zy = 2 * zx * zy + cy;
+        zx = new_zx;
+        zy = new_zy;
+        iter++;
+    }
+    arg->intensidade = (double)iter * 255 / (double)max;
+    return NULL;
 }
+
 void *mandelp(void *argumentos){
   int pixels = altura * largura;
   int *x = argumentos;
@@ -52,8 +52,7 @@ int main(int argc, char **argv){
     printf("erro");
     return 1;
   }
-  clock_t start, end;
-  double e;
+  double start, end;
   if(argc != 5){
     printf("argumentos invalidos");
     return 1;
@@ -62,7 +61,7 @@ int main(int argc, char **argv){
   altura = atoi(argv[2]);
   max = atoi(argv[3]);
   num_threads = atoi(argv[4]);
-  if(largura < 1 || altura < 1 || max < 1 || num_threads < 0){
+  if(largura < 1 || altura < 1 || max < 1 || num_threads < 1){
     printf("argumentos invalidos");
     return 1;
   }
@@ -77,18 +76,21 @@ int main(int argc, char **argv){
     printf("erro");
     return 1;
   }
-  start = clock();
+  start = omp_get_wtime();
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
       argumentos[i][j].x = j;
       argumentos[i][j].y = i;
       mandel(&argumentos[i][j]);
+    }
+  }
+  end = omp_get_wtime();
+  fprintf(time, "tempo de exec serial: %f segundos\n", end - start);
+  for(int i = 0; i < altura; i++){
+    for(int j = 0; j < largura; j++){
       fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
-  end = clock();
-  e = (double)(end - start) / CLOCKS_PER_SEC;
-  fprintf(time, "tempo de exec serial: %f segundos\n", e);
   if(fclose(fptr) != 0){
     printf("erro");
   }
@@ -97,16 +99,13 @@ int main(int argc, char **argv){
     printf("erro");
     return 1;
   }
-  start = clock();
-  int p[num_threads];
-  #pragma omp parallel for
-  for(int i = 0; i < num_threads; i++){
-    p[i] = i;
-    mandelp(&p[i]);
+  start = omp_get_wtime();
+  #pragma omp parallel for num_threads(num_threads)
+  for(int i = 0; i < pixels; i++){
+    mandel(&ptr[i]);
   }
-  end = clock();
-  e = (double)(end - start) / CLOCKS_PER_SEC;
-  fprintf(time, "tempo de exec openmp: %f segundos\n", e);
+  end = omp_get_wtime();
+  fprintf(time, "tempo de exec openmp: %f segundos\n", end - start);
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
       fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
@@ -120,9 +119,11 @@ int main(int argc, char **argv){
     printf("erro");
     return 1;
   }
-  start = clock();
+  start = omp_get_wtime();
   pthread_t threads[num_threads];
+  int p[num_threads];
   for(int i = 0; i < num_threads; i++){
+    p[i] = i;
     if(pthread_create(&threads[i], NULL, mandelp, &p[i]) != 0){
       printf("erro");
       return 1;
@@ -134,14 +135,13 @@ int main(int argc, char **argv){
       return 1;
     }
   }
-  end = clock();
+  end = omp_get_wtime();
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
       fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
-  e = (double)(end - start) / CLOCKS_PER_SEC;
-  fprintf(time, "tempo de exec pthread1: %f segundos\n", e);
+  fprintf(time, "tempo de exec pthread1: %f segundos\n", end - start);
   if(fclose(fptr) != 0){
     printf("erro");
   }
