@@ -4,9 +4,9 @@
 #include <omp.h>
 #include <time.h>
 
-float altura;
-float largura;
-float max;
+int altura;
+int largura;
+int max;
 int num_threads;
 FILE *fptr;
 typedef struct {
@@ -17,11 +17,11 @@ typedef struct {
 args *ptr;
 void *mandel(void *argumentos){
   args *arg = argumentos;
-  float cx = 3 * arg->x / largura - 2;
-  float cy = 3 * arg->y / altura - 1.5;
+  float cx = 3 * arg->x / (float)largura - 2;
+  float cy = 3 * arg->y / (float)altura - 1.5;
   float zx = 0;
   float zy = 0;
-  float iter = 0;
+  int iter = 0;
   while(iter < max){
     double new = zx * zx + cx;
     zx = new;
@@ -29,7 +29,7 @@ void *mandel(void *argumentos){
     zy = new;
     iter++;
   }
-  arg->intensidade = iter + 255 / max;
+  arg->intensidade = (float)iter + 255 / max;
   return NULL;
 }
 void *mandelp(void *argumentos){
@@ -41,7 +41,7 @@ void *mandelp(void *argumentos){
   }
   return NULL;
 }
-int main(int argc, int **argv){
+int main(int argc, char **argv){
   FILE *time = fopen("time.txt", "w");
   if(time == NULL){
     printf("erro");
@@ -53,9 +53,9 @@ int main(int argc, int **argv){
     printf("argumentos invalidos");
     return 1;
   }
-  largura = atof(argv[1]);
-  altura = atof(argv[2]);
-  max = atof(argv[3]);
+  largura = atoi(argv[1]);
+  altura = atoi(argv[2]);
+  max = atoi(argv[3]);
   num_threads = atoi(argv[4]);
   args argumentos[altura][largura];
   ptr = &argumentos[0][0];
@@ -87,7 +87,7 @@ int main(int argc, int **argv){
   start = clock();
   #pragma omp parallel for
   for(int i = 0; i < num_threads; i++){
-    mandelp(i);
+    mandelp(&i);
   }
   end = clock();
   e = (double)(end - start) / CLOCKS_PER_SEC;
@@ -109,7 +109,7 @@ int main(int argc, int **argv){
   pthread_t threads[num_threads];
   int p[num_threads];
   for(int i = 0; i < num_threads; i++){
-    int p[i] = i;
+    p[i] = i;
     if(pthread_create(&threads[i], NULL, mandelp, &p[i]) != 0){
       printf("erro");
       return 1;
