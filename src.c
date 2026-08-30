@@ -82,7 +82,7 @@ int main(int argc, char **argv){
     printf("argumentos invalidos");
     return 1;
   }
-  pixels = altura * largura
+  pixels = altura * largura;
   args *argumentos = malloc(pixels * sizeof(args));
   ptr = argumentos;
   if(num_threads > pixels){
@@ -105,7 +105,7 @@ int main(int argc, char **argv){
   fprintf(time, "tempo de exec serial: %f segundos\n", end - start);
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
-      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i* largura + j].x, argumentos[i * largura + j].y, argumentos[i * largura + j].intensidade);
     }
   }
   if(fclose(fptr) != 0){
@@ -125,7 +125,7 @@ int main(int argc, char **argv){
   fprintf(time, "tempo de exec openmp: %f segundos\n", end - start);
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
-      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i* largura + j].x, argumentos[i * largura + j].y, argumentos[i * largura + j].intensidade);
     }
   }
   if(fclose(fptr) != 0){
@@ -155,7 +155,7 @@ int main(int argc, char **argv){
   end = omp_get_wtime();
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
-      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i* largura + j].x, argumentos[i * largura + j].y, argumentos[i * largura + j].intensidade);
     }
   }
   fprintf(time, "tempo de exec pthread1: %f segundos\n", end - start);
@@ -197,7 +197,7 @@ int main(int argc, char **argv){
   fprintf(time, "tempo de exec pthread2: %f segundos\n", end - start);
   for (int i = 0; i < altura; i++) {
     for (int j = 0; j < largura; j++) {
-      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i* largura + j].x, argumentos[i * largura + j].y, argumentos[i * largura + j].intensidade);
     }
   }
   if (fclose(fptr) != 0) {
