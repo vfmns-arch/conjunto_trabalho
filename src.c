@@ -94,8 +94,8 @@ int main(int argc, char **argv){
     return 1;
   }
   start = clock();
-  #pragma omp parallel for
   int p[num_threads];
+  #pragma omp parallel for
   for(int i = 0; i < num_threads; i++){
     p[i] = i;
     mandelp(&p[i]);
