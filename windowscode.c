@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
+#include <time.h>
 
 int altura;
 int largura;
@@ -66,7 +66,7 @@ int main(int argc, char **argv){
     printf("erro ao criar arquivo serial");
     return 1;
   }
-  start = omp_get_wtime();
+  start = clock();
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
       argumentos[i * largura + j].x = j;
@@ -74,8 +74,8 @@ int main(int argc, char **argv){
       mandel(&argumentos[i * largura + j]);
     }
   }
-  end = omp_get_wtime();
-  fprintf(time, "tempo de exec serial: %f segundos\n", end - start);
+  end = clock();
+  fprintf(time, "tempo de exec serial: %f segundos\n", (end - start) / CLOCKS_PER_SEC);
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
       fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i* largura + j].x, argumentos[i * largura + j].y, argumentos[i * largura + j].intensidade);
@@ -83,26 +83,6 @@ int main(int argc, char **argv){
   }
   if(fclose(fptr) != 0){
     printf("erro ao fechar arquivo serial");
-  }
-  fptr = fopen("mandelbrot_vfmns_openmp.txt", "w");
-  if(fptr == NULL){
-    printf("erro ao abrir arquivo openmp");
-    return 1;
-  }
-  start = omp_get_wtime();
-  #pragma omp parallel for num_threads(num_threads)
-  for(int i = 0; i < pixels; i++){
-    mandel(&ptr[i]);
-  }
-  end = omp_get_wtime();
-  fprintf(time, "tempo de exec openmp: %f segundos\n", end - start);
-  for(int i = 0; i < altura; i++){
-    for(int j = 0; j < largura; j++){
-      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i* largura + j].x, argumentos[i * largura + j].y, argumentos[i * largura + j].intensidade);
-    }
-  }
-  if(fclose(fptr) != 0){
-    printf("erro ao fechar arquivo openmp");
   }
   if(fclose(time) != 0){
     printf("erro ao fechar arquivo de tempo");
