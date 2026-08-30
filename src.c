@@ -14,7 +14,7 @@ int pixels;
 typedef struct {
   int x;
   int y;
-  float intensidade;
+  double intensidade;
 } args;
 args *ptr;
 void *mandel(void *argumentos) {
@@ -35,7 +35,6 @@ void *mandel(void *argumentos) {
     return NULL;
 }
 void *mandelp(void *argumentos){
-  int pixels = altura * largura;
   int *x = argumentos;
   int section = (pixels - pixels % num_threads) / num_threads;
   for(int i = *x * section; i < *x * section + section; i++){
@@ -84,6 +83,10 @@ int main(int argc, char **argv){
   }
   pixels = altura * largura;
   args *argumentos = malloc(pixels * sizeof(args));
+  if(!argumentos){
+    fprintf("erro alocando memoria");
+    return 1;
+  }
   ptr = argumentos;
   if(num_threads > pixels){
     num_threads = pixels;
