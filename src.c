@@ -39,6 +39,11 @@ void *mandelp(void *argumentos){
   for(int i = *x * section; i < *x * section + section; i++){
     mandel(&ptr[i]);
   }
+  if(*x == num_threads){
+    for(int i = *x * section + section; i < pixels; i++){
+      mandel(&ptr[i]);
+    } 
+  }
   return NULL;
 }
 int main(int argc, char **argv){
@@ -70,7 +75,7 @@ int main(int argc, char **argv){
       argumentos[i][j].x = j;
       argumentos[i][j].y = i;
       mandel(&argumentos[i][j]);
-      fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
   end = clock();
@@ -86,15 +91,17 @@ int main(int argc, char **argv){
   }
   start = clock();
   #pragma omp parallel for
+  int p[num_threads];
   for(int i = 0; i < num_threads; i++){
-    mandelp(&i);
+    p[i] = i;
+    mandelp(&p[i]);
   }
   end = clock();
   e = (double)(end - start) / CLOCKS_PER_SEC;
   fprintf(time, "tempo de exec openmp: %f segundos\n", e);
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
-      fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
   if(fclose(fptr) != 0){
@@ -107,9 +114,7 @@ int main(int argc, char **argv){
   }
   start = clock();
   pthread_t threads[num_threads];
-  int p[num_threads];
   for(int i = 0; i < num_threads; i++){
-    p[i] = i;
     if(pthread_create(&threads[i], NULL, mandelp, &p[i]) != 0){
       printf("erro");
       return 1;
@@ -124,7 +129,7 @@ int main(int argc, char **argv){
   end = clock();
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
-      fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+      fprintf(fptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
   e = (double)(end - start) / CLOCKS_PER_SEC;
