@@ -62,6 +62,10 @@ int main(int argc, char **argv){
   altura = atoi(argv[2]);
   max = atoi(argv[3]);
   num_threads = atoi(argv[4]);
+  if(largura < 1 || altura < 1 || max < 1 || num_threads < 0){
+    printf("argumentos invalidos");
+    return 1;
+  }
   args argumentos[altura][largura];
   ptr = &argumentos[0][0];
   int pixels = altura * largura;
