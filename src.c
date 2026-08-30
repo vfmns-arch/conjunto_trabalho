@@ -4,24 +4,24 @@
 #include <omp.h>
 #include <time.h>
 
-int altura;
-int largura;
+float altura;
+float largura;
 int max;
 int num_threads;
 FILE *fptr;
 typedef struct {
   int x;
   int y;
-  int intensidade;
+  float intensidade;
 } args;
 args *ptr;
 void *mandel(void *argumentos){
   args *arg = argumentos;
-  double cx = 3 * arg->x / largura - 2;
-  double cy = 3 * arg->y / altura - 1.5;
-  double zx = 0;
-  double zy = 0;
-  int iter = 0;
+  float cx = 3 * arg->x / largura - 2;
+  float cy = 3 * arg->y / altura - 1.5;
+  float zx = 0;
+  float zy = 0;
+  float iter = 0;
   while(iter < max){
     double new = zx * zx + cy;
     zx = new;
@@ -30,7 +30,6 @@ void *mandel(void *argumentos){
     iter++;
   }
   arg->intensidade = iter + 255 / max;
-  fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %d\n", arg->x, arg->y, arg->intensidade);
   return NULL;
 }
 void *mandelp(void *argumentos){
@@ -54,8 +53,8 @@ int main(int argc, int **argv){
     printf("argumentos invalidos");
     return 1;
   }
-  largura = atoi(argv[1]);
-  altura = atoi(argv[2]);
+  largura = atof(argv[1]);
+  altura = atof(argv[2]);
   max = atoi(argv[3]);
   num_threads = atoi(argv[4]);
   args argumentos[altura][largura];
@@ -71,6 +70,7 @@ int main(int argc, int **argv){
       argumentos[i][j].x = j;
       argumentos[i][j].y = i;
       mandel(&argumentos[i][j]);
+      fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
   end = clock();
@@ -92,6 +92,11 @@ int main(int argc, int **argv){
   end = clock();
   e = (double)(end - start) / CLOCK_PER_SEC;
   fprintf(time, "tempo de exec openmp: %f segundos\n", e);
+  for(int i = 0; i < altura; i++){
+    for(int j = 0; 0 < largura; j++){
+      fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+    }
+  }
   if(fclose(ptr) != 0){
     printf("erro");
   }
@@ -115,6 +120,11 @@ int main(int argc, int **argv){
     }
   }
   end = clock();
+  for(int i = 0; i < altura; i++){
+    for(int j = 0; 0 < largura; j++){
+      fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
+    }
+  }
   e = (double)(end - start) / CLOCK_PER_SEC;
   fprintf(time, "tempo de exec pthread1: %f segundos\n", e);
   if(fclose(ptr) != 0){
