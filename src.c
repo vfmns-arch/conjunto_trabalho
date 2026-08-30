@@ -29,7 +29,7 @@ void *mandel(void *argumentos){
     zy = new;
     iter++;
   }
-  arg->intensidade = (float)iter + 255 / max;
+  arg->intensidade = (float)iter * 255 / (float)max;
   return NULL;
 }
 void *mandelp(void *argumentos){
@@ -39,7 +39,7 @@ void *mandelp(void *argumentos){
   for(int i = *x * section; i < *x * section + section; i++){
     mandel(&ptr[i]);
   }
-  if(*x == num_threads){
+  if(*x == num_threads - 1){
     for(int i = *x * section + section; i < pixels; i++){
       mandel(&ptr[i]);
     } 
@@ -64,6 +64,10 @@ int main(int argc, char **argv){
   num_threads = atoi(argv[4]);
   args argumentos[altura][largura];
   ptr = &argumentos[0][0];
+  int pixels = altura * largura;
+  if(num_threads > pixels){
+    num_threads = pixels;
+  }
   fptr = fopen("mandelbrot_vfmns_serial.txt", "w");
   if(fptr == NULL){
     printf("erro");
