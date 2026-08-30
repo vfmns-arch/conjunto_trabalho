@@ -10,6 +10,7 @@ int num_threads;
 FILE *fptr;
 pthread_mutex_t mutex;
 int next_pixel = 0;
+int pixels;
 typedef struct {
   int x;
   int y;
@@ -81,9 +82,9 @@ int main(int argc, char **argv){
     printf("argumentos invalidos");
     return 1;
   }
-  args argumentos[altura][largura];
-  ptr = &argumentos[0][0];
-  int pixels = altura * largura;
+  pixels = altura * largura
+  args *argumentos = malloc(pixels * sizeof(args));
+  ptr = argumentos;
   if(num_threads > pixels){
     num_threads = pixels;
   }
@@ -95,9 +96,9 @@ int main(int argc, char **argv){
   start = omp_get_wtime();
   for(int i = 0; i < altura; i++){
     for(int j = 0; j < largura; j++){
-      argumentos[i][j].x = j;
-      argumentos[i][j].y = i;
-      mandel(&argumentos[i][j]);
+      argumentos[i * largura + j].x = j;
+      argumentos[i * largura + j].y = i;
+      mandel(&argumentos[i * largura + j]);
     }
   }
   end = omp_get_wtime();
@@ -207,5 +208,6 @@ int main(int argc, char **argv){
     printf("erro ao fechar arquivo times");
     return 1;
   }
+  free(argumentos);
   return 0;
 }
