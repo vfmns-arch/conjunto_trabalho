@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthreads.h>
+#include <pthread.h>
 #include <omp.h>
 #include <time.h>
 
 float altura;
 float largura;
-int max;
+float max;
 int num_threads;
 FILE *fptr;
 typedef struct {
@@ -23,7 +23,7 @@ void *mandel(void *argumentos){
   float zy = 0;
   float iter = 0;
   while(iter < max){
-    double new = zx * zx + cy;
+    double new = zx * zx + cx;
     zx = new;
     new = zy * zy + cy;
     zy = new;
@@ -37,7 +37,7 @@ void *mandelp(void *argumentos){
   int *x = argumentos;
   int section = (pixels - pixels % num_threads) / num_threads;
   for(int i = *x * section; i < *x * section + section; i++){
-    mandel(ptr[i]);
+    mandel(&ptr[i]);
   }
   return NULL;
 }
@@ -55,7 +55,7 @@ int main(int argc, int **argv){
   }
   largura = atof(argv[1]);
   altura = atof(argv[2]);
-  max = atoi(argv[3]);
+  max = atof(argv[3]);
   num_threads = atoi(argv[4]);
   args argumentos[altura][largura];
   ptr = &argumentos[0][0];
@@ -66,7 +66,7 @@ int main(int argc, int **argv){
   }
   start = clock();
   for(int i = 0; i < altura; i++){
-    for(int j = 0; 0 < largura; j++){
+    for(int j = 0; j < largura; j++){
       argumentos[i][j].x = j;
       argumentos[i][j].y = i;
       mandel(&argumentos[i][j]);
@@ -74,9 +74,9 @@ int main(int argc, int **argv){
     }
   }
   end = clock();
-  e = (double)(end - start) / CLOCK_PER_SEC;
+  e = (double)(end - start) / CLOCKS_PER_SEC;
   fprintf(time, "tempo de exec serial: %f segundos\n", e);
-  if(fclose(ptr) != 0){
+  if(fclose(fptr) != 0){
     printf("erro");
   }
   fptr = fopen("mandelbrot_vfmns_openmp.txt", "w");
@@ -90,25 +90,27 @@ int main(int argc, int **argv){
     mandelp(i);
   }
   end = clock();
-  e = (double)(end - start) / CLOCK_PER_SEC;
+  e = (double)(end - start) / CLOCKS_PER_SEC;
   fprintf(time, "tempo de exec openmp: %f segundos\n", e);
   for(int i = 0; i < altura; i++){
-    for(int j = 0; 0 < largura; j++){
+    for(int j = 0; j < largura; j++){
       fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
-  if(fclose(ptr) != 0){
+  if(fclose(fptr) != 0){
     printf("erro");
   }
   fptr = fopen("mandelbrot_vfmns_pthread1.txt", "w");
-  if(fptr = NULL){
+  if(fptr == NULL){
     printf("erro");
     return 1;
   }
   start = clock();
   pthread_t threads[num_threads];
+  int p[num_threads];
   for(int i = 0; i < num_threads; i++){
-    if(pthread_create(&threads[i], NULL, mandelp, &i) != 0){
+    int p[i] = i;
+    if(pthread_create(&threads[i], NULL, mandelp, &p[i]) != 0){
       printf("erro");
       return 1;
     }
@@ -121,13 +123,13 @@ int main(int argc, int **argv){
   }
   end = clock();
   for(int i = 0; i < altura; i++){
-    for(int j = 0; 0 < largura; j++){
+    for(int j = 0; j < largura; j++){
       fprintf(ptr, "intensidade do pixel[x: %d][y: %d]: %f\n", argumentos[i][j].x, argumentos[i][j].y, argumentos[i][j].intensidade);
     }
   }
-  e = (double)(end - start) / CLOCK_PER_SEC;
+  e = (double)(end - start) / CLOCKS_PER_SEC;
   fprintf(time, "tempo de exec pthread1: %f segundos\n", e);
-  if(fclose(ptr) != 0){
+  if(fclose(fptr) != 0){
     printf("erro");
   }
   if(fclose(time) != 0){
